@@ -3,6 +3,8 @@ import pygame
 from game.text_box import TextBox
  
 class GameEngine:
+    ROUND_DURATION_MS = 30_000
+
     def __init__(self, width, height):
         self.width = width
         self.height = height
@@ -39,6 +41,7 @@ class GameEngine:
         self.secret_word = random.choice(self.words)
         self.scrambled_word = self.scramble_string(self.secret_word)
         self.hint_count = 0
+        self.round_start_ticks = pygame.time.get_ticks()
         self.input_box.clear()
 
     def reveal_hint(self):
@@ -77,7 +80,9 @@ class GameEngine:
                 self.reveal_hint()
 
     def update(self):
-        pass
+        elapsed_ms = pygame.time.get_ticks() - self.round_start_ticks
+        if elapsed_ms >= self.ROUND_DURATION_MS:
+            self.next_round()
 
     def render(self, screen):
         screen.fill((26, 30, 38))
@@ -87,6 +92,12 @@ class GameEngine:
 
         score_surf = self.font_msg.render(f"Score: {self.score}", True, (255, 220, 80))
         screen.blit(score_surf, (self.width // 2 - score_surf.get_width() // 2, 70))
+
+        elapsed_ms = pygame.time.get_ticks() - self.round_start_ticks
+        remaining_seconds = max(0, (self.ROUND_DURATION_MS - elapsed_ms + 999) // 1000)
+        timer_color = (240, 80, 80) if remaining_seconds <= 5 else (210, 215, 225)
+        timer_surf = self.font_msg.render(f"Time: {remaining_seconds}s", True, timer_color)
+        screen.blit(timer_surf, (self.width // 2 - timer_surf.get_width() // 2, 98))
 
         spaced_letters = "  ".join(self.scrambled_word)
         scramble_surf = self.font_word.render(spaced_letters, True, (100, 200, 255))
